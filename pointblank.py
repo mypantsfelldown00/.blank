@@ -583,3 +583,4 @@ else:
     with status_cols[3]:
         status = "✅ Available" if HAS_TF else "❌ Missing"
         st.markdown(f"**LSTM:** {status}")
+
