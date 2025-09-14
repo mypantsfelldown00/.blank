@@ -116,7 +116,7 @@ st.title("POINT.BLANK")
 # Expanded City list with timezones (covering all major zones)
 # ------------------------------
 cities = [
-    # Pacific
+    # Pacific & Americas
     {"city": "Honolulu", "lat": 21.3069, "lon": -157.8583, "timezone": "Pacific/Honolulu"},
     {"city": "Anchorage", "lat": 61.2181, "lon": -149.9003, "timezone": "America/Anchorage"},
     {"city": "Los Angeles", "lat": 34.0522, "lon": -118.2437, "timezone": "America/Los_Angeles"},
@@ -129,35 +129,63 @@ cities = [
     {"city": "Buenos Aires", "lat": -34.6037, "lon": -58.3816, "timezone": "America/Argentina/Buenos_Aires"},
     {"city": "Santiago", "lat": -33.4489, "lon": -70.6693, "timezone": "America/Santiago"},
     {"city": "Lima", "lat": -12.0464, "lon": -77.0428, "timezone": "America/Lima"},
-    
+    {"city": "Caracas", "lat": 10.4806, "lon": -66.9036, "timezone": "America/Caracas"},
+    {"city": "Bogotá", "lat": 4.7110, "lon": -74.0721, "timezone": "America/Bogota"},
+    {"city": "Phoenix", "lat": 33.4484, "lon": -112.0740, "timezone": "America/Phoenix"},
+    {"city": "Adak", "lat": 51.8780, "lon": -176.6581, "timezone": "America/Adak"},
+
     # Europe & Africa
     {"city": "London", "lat": 51.5074, "lon": -0.1278, "timezone": "Europe/London"},
     {"city": "Lisbon", "lat": 38.7169, "lon": -9.1390, "timezone": "Europe/Lisbon"},
     {"city": "Paris", "lat": 48.8566, "lon": 2.3522, "timezone": "Europe/Paris"},
-    {"city": "Berlin", "lat": 52.52, "lon": 13.405, "timezone": "Europe/Berlin"},
-    {"city": "Cairo", "lat": 30.0444, "lon": 31.2357, "timezone": "Africa/Cairo"},
-    {"city": "Johannesburg", "lat": -26.2041, "lon": 28.0473, "timezone": "Africa/Johannesburg"},
+    {"city": "Berlin", "lat": 52.5200, "lon": 13.4050, "timezone": "Europe/Berlin"},
+    {"city": "Rome", "lat": 41.9028, "lon": 12.4964, "timezone": "Europe/Rome"},
+    {"city": "Madrid", "lat": 40.4168, "lon": -3.7038, "timezone": "Europe/Madrid"},
+    {"city": "Dublin", "lat": 53.3331, "lon": -6.2489, "timezone": "Europe/Dublin"},
+    {"city": "Athens", "lat": 37.9838, "lon": 23.7275, "timezone": "Europe/Athens"},
+    {"city": "Helsinki", "lat": 60.1699, "lon": 24.9384, "timezone": "Europe/Helsinki"},
+    {"city": "Warsaw", "lat": 52.2297, "lon": 21.0122, "timezone": "Europe/Warsaw"},
     {"city": "Moscow", "lat": 55.7558, "lon": 37.6173, "timezone": "Europe/Moscow"},
     {"city": "Istanbul", "lat": 41.0082, "lon": 28.9784, "timezone": "Europe/Istanbul"},
-    
+    {"city": "Cairo", "lat": 30.0444, "lon": 31.2357, "timezone": "Africa/Cairo"},
+    {"city": "Johannesburg", "lat": -26.2041, "lon": 28.0473, "timezone": "Africa/Johannesburg"},
+    {"city": "Nairobi", "lat": -1.2921, "lon": 36.8219, "timezone": "Africa/Nairobi"},
+    {"city": "Lagos", "lat": 6.5244, "lon": 3.3792, "timezone": "Africa/Lagos"},
+    {"city": "Casablanca", "lat": 33.5731, "lon": -7.5898, "timezone": "Africa/Casablanca"},
+
     # Middle East & Asia
     {"city": "Dubai", "lat": 25.276987, "lon": 55.296249, "timezone": "Asia/Dubai"},
     {"city": "Tehran", "lat": 35.6892, "lon": 51.3890, "timezone": "Asia/Tehran"},
+    {"city": "Jerusalem", "lat": 31.7683, "lon": 35.2137, "timezone": "Asia/Jerusalem"},
+    {"city": "Amman", "lat": 31.9497, "lon": 35.9323, "timezone": "Asia/Amman"},
     {"city": "Karachi", "lat": 24.8607, "lon": 67.0011, "timezone": "Asia/Karachi"},
     {"city": "Delhi", "lat": 28.6139, "lon": 77.2090, "timezone": "Asia/Kolkata"},
     {"city": "Kathmandu", "lat": 27.7172, "lon": 85.3240, "timezone": "Asia/Kathmandu"},
     {"city": "Dhaka", "lat": 23.8103, "lon": 90.4125, "timezone": "Asia/Dhaka"},
+    {"city": "Colombo", "lat": 6.9271, "lon": 79.8612, "timezone": "Asia/Colombo"},
     {"city": "Bangkok", "lat": 13.7563, "lon": 100.5018, "timezone": "Asia/Bangkok"},
     {"city": "Singapore", "lat": 1.3521, "lon": 103.8198, "timezone": "Asia/Singapore"},
+    {"city": "Kuala Lumpur", "lat": 3.1390, "lon": 101.6869, "timezone": "Asia/Kuala_Lumpur"},
+    {"city": "Jakarta", "lat": -6.2088, "lon": 106.8456, "timezone": "Asia/Jakarta"},
     {"city": "Shanghai", "lat": 31.2304, "lon": 121.4737, "timezone": "Asia/Shanghai"},
+    {"city": "Taipei", "lat": 25.0330, "lon": 121.5654, "timezone": "Asia/Taipei"},
     {"city": "Tokyo", "lat": 35.6762, "lon": 139.6503, "timezone": "Asia/Tokyo"},
     {"city": "Seoul", "lat": 37.5665, "lon": 126.9780, "timezone": "Asia/Seoul"},
-    
+    {"city": "Almaty", "lat": 43.2220, "lon": 76.8512, "timezone": "Asia/Almaty"},
+    {"city": "Tashkent", "lat": 41.2995, "lon": 69.2401, "timezone": "Asia/Tashkent"},
+    {"city": "Ulaanbaatar", "lat": 47.8864, "lon": 106.9057, "timezone": "Asia/Ulaanbaatar"},
+    {"city": "Yangon", "lat": 16.8409, "lon": 96.1735, "timezone": "Asia/Yangon"},
+
     # Oceania
     {"city": "Sydney", "lat": -33.8688, "lon": 151.2093, "timezone": "Australia/Sydney"},
     {"city": "Melbourne", "lat": -37.8136, "lon": 144.9631, "timezone": "Australia/Melbourne"},
+    {"city": "Brisbane", "lat": -27.4698, "lon": 153.0251, "timezone": "Australia/Brisbane"},
+    {"city": "Adelaide", "lat": -34.9285, "lon": 138.6007, "timezone": "Australia/Adelaide"},
+    {"city": "Perth", "lat": -31.9505, "lon": 115.8605, "timezone": "Australia/Perth"},
     {"city": "Auckland", "lat": -36.8485, "lon": 174.7633, "timezone": "Pacific/Auckland"},
     {"city": "Fiji", "lat": -18.1416, "lon": 178.4419, "timezone": "Pacific/Fiji"},
+    {"city": "Noumea", "lat": -22.2763, "lon": 166.4572, "timezone": "Pacific/Noumea"},
+    {"city": "Guadalcanal", "lat": -9.4456, "lon": 160.1960, "timezone": "Pacific/Guadalcanal"},
 ]
 
 
@@ -517,10 +545,63 @@ st.title("")
 st.markdown("")
 
 tickers_list = [
-    "AAPL","MSFT","GOOG","AMZN","TSLA","META","NVDA","JPM","V","JNJ","WMT",
-    "RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS","SBIN.NS",
+    # 🌎 Americas
+    "AAPL","MSFT","AMZN","TSLA","JPM",   # New York
+    "RY.TO","SHOP.TO","ENB.TO","ABX.TO", # Toronto
+    "AMXL.MX","BIMBOA.MX","CEMEXCPO.MX", # Mexico City
+    "PETR4.SA","VALE3.SA","ITUB4.SA",    # São Paulo
+    "YPFD.BA","GGAL.BA","TEO.BA",        # Buenos Aires
+    "CHILE.SN","ENELAM.SN","SQM.SN",     # Santiago
+    "BAP.LM","BVN.LM","SCCO.LM",         # Lima
+    "CIB","AVAL",                        # Bogotá (Ecopetrol trades as EC in US ADRs)
+    
+    # 🌍 Europe & Africa
+    "HSBA.L","BP.L","ULVR.L","BARC.L",   # London
+    "MC.PA","TTE.PA","AIR.PA","SAN.PA",  # Paris
+    "SIE.DE","VOW3.DE","SAP.DE","ALV.DE",# Frankfurt
+    "ENI.MI","ISP.MI","RACE.MI",         # Milan/Rome
+    "SAN.MC","TEF.MC","IBE.MC",          # Madrid
+    "RYA.IR","CRH.IR","KYGA.IR",         # Dublin
+    "ETE.AT","HTO.AT",                   # Athens
+    "NOKIA.HE","KNEBV.HE","NESTE.HE",    # Helsinki
+    "PKO.WA","PKN.WA","KGH.WA",          # Warsaw
+    "TCELL.IS","GARAN.IS","AEFES.IS",    # Istanbul
+    "COMI.CA","ETEL.CA",                 # Cairo
+    "SOLJ.J","NPN.J","AGLJ.J",           # Johannesburg
+    "SCOM.NR","EQTY.NR","KCB.NR",        # Nairobi
+    "DANGCEM.LG","MTNN.LG","ZENITH.LG",  # Lagos
+    "ATW.CS","IAM.CS",                   # Casablanca
+    
+    # 🌏 Middle East & Asia
+    "EMAAR.DU","DIB.DU",                 # Dubai
+    "TEVA.TA","LUMI.TA",                 # Tel Aviv
+    "ARBK.AM","THBK.AM",                 # Amman
+    "OGDC.KA","HBL.KA",                  # Karachi
+    "RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS", # Delhi (India)
+    "NTC.NP","NABIL.NP",                 # Kathmandu
+    "GP.DH","SQURPHARMA.DH",             # Dhaka
+    "JKH.CM","COMB.CM",                  # Colombo
+    "PTT.BK","SCC.BK","BBL.BK",          # Bangkok
+    "D05.SI","Z74.SI","BN4.SI",          # Singapore
+    "MAYBANK.KL","PCHEM.KL","TENAGA.KL", # Kuala Lumpur
+    "BBCA.JK","TLKM.JK",                 # Jakarta
+    "601398.SS","601857.SS","600104.SS", # Shanghai
+    "2330.TW","2317.TW","2454.TW",       # Taipei
+    "7203.T","6758.T","9984.T","7974.T", # Tokyo
+    "005930.KQ","005380.KQ","000660.KQ", # Seoul
+    "KMGZ.KZ","HSBK.KZ",                 # Almaty
+    "UZAUTO.UZ",                         # Tashkent
+    "APU.MN","TTL.MN",                   # Ulaanbaatar
+    "FMI.MM","MTSH.MM",                  # Yangon
+    
+    # 🌊 Oceania
+    "BHP.AX","CBA.AX","CSL.AX","WBC.AX", # Sydney/Melbourne/Brisbane/Perth/Adelaide
+    "AIA.NZ","SPK.NZ","FPH.NZ",          # Auckland
+    
+    # Crypto
     "BTC-USD","ETH-USD"
 ]
+
 
 controls = st.columns([2,2,2,2,1])
 with controls[0]:
