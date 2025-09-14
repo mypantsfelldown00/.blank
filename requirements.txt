@@ -1,10 +1,17 @@
+# Core app
 streamlit
 yfinance
 pandas
 numpy
 plotly
+streamlit-plotly-events
+pytz
 feedparser
+
+# Forecasting models
 prophet
 statsmodels
 scikit-learn
 tensorflow
+
+
