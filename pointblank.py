@@ -1,11 +1,3 @@
-"""
-Combined Stock Analysis & News App
-- Yahoo Finance data with technical indicators
-- Multiple forecasting models: Prophet, ARIMA, Random Forest, LSTM
-- Real-time news feed from Google News RSS
-- All in one powerful interface
-"""
-
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -15,13 +7,14 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datetime import timedelta
+from streamlit_plotly_events import plotly_events
+from datetime import datetime, timedelta
+import pytz
 import feedparser
 import urllib.parse
 import html
 import re
 import time
-from datetime import datetime
 
 # --------------------------
 # ML libraries
@@ -110,10 +103,137 @@ accept = st.checkbox(" I have read and accept the disclaimer")
 if not accept:
     st.warning("⚠️ Please accept the disclaimer to use the app.")
     st.stop()
+import streamlit as st
+import plotly.graph_objects as go
+from streamlit_plotly_events import plotly_events
+from datetime import datetime
+import pytz
 
-# --------------------------
-# Data & Analysis Utilities
-# --------------------------
+st.set_page_config(page_title="🌍 World Clock Globe", layout="wide")
+st.title("POINT.BLANK")
+
+# ------------------------------
+# Expanded City list with timezones (covering all major zones)
+# ------------------------------
+cities = [
+    # Pacific
+    {"city": "Honolulu", "lat": 21.3069, "lon": -157.8583, "timezone": "Pacific/Honolulu"},
+    {"city": "Anchorage", "lat": 61.2181, "lon": -149.9003, "timezone": "America/Anchorage"},
+    {"city": "Los Angeles", "lat": 34.0522, "lon": -118.2437, "timezone": "America/Los_Angeles"},
+    {"city": "Denver", "lat": 39.7392, "lon": -104.9903, "timezone": "America/Denver"},
+    {"city": "Chicago", "lat": 41.8781, "lon": -87.6298, "timezone": "America/Chicago"},
+    {"city": "New York", "lat": 40.7128, "lon": -74.0060, "timezone": "America/New_York"},
+    {"city": "Toronto", "lat": 43.6532, "lon": -79.3832, "timezone": "America/Toronto"},
+    {"city": "Mexico City", "lat": 19.4326, "lon": -99.1332, "timezone": "America/Mexico_City"},
+    {"city": "São Paulo", "lat": -23.5505, "lon": -46.6333, "timezone": "America/Sao_Paulo"},
+    {"city": "Buenos Aires", "lat": -34.6037, "lon": -58.3816, "timezone": "America/Argentina/Buenos_Aires"},
+    {"city": "Santiago", "lat": -33.4489, "lon": -70.6693, "timezone": "America/Santiago"},
+    {"city": "Lima", "lat": -12.0464, "lon": -77.0428, "timezone": "America/Lima"},
+    
+    # Europe & Africa
+    {"city": "London", "lat": 51.5074, "lon": -0.1278, "timezone": "Europe/London"},
+    {"city": "Lisbon", "lat": 38.7169, "lon": -9.1390, "timezone": "Europe/Lisbon"},
+    {"city": "Paris", "lat": 48.8566, "lon": 2.3522, "timezone": "Europe/Paris"},
+    {"city": "Berlin", "lat": 52.52, "lon": 13.405, "timezone": "Europe/Berlin"},
+    {"city": "Cairo", "lat": 30.0444, "lon": 31.2357, "timezone": "Africa/Cairo"},
+    {"city": "Johannesburg", "lat": -26.2041, "lon": 28.0473, "timezone": "Africa/Johannesburg"},
+    {"city": "Moscow", "lat": 55.7558, "lon": 37.6173, "timezone": "Europe/Moscow"},
+    {"city": "Istanbul", "lat": 41.0082, "lon": 28.9784, "timezone": "Europe/Istanbul"},
+    
+    # Middle East & Asia
+    {"city": "Dubai", "lat": 25.276987, "lon": 55.296249, "timezone": "Asia/Dubai"},
+    {"city": "Tehran", "lat": 35.6892, "lon": 51.3890, "timezone": "Asia/Tehran"},
+    {"city": "Karachi", "lat": 24.8607, "lon": 67.0011, "timezone": "Asia/Karachi"},
+    {"city": "Delhi", "lat": 28.6139, "lon": 77.2090, "timezone": "Asia/Kolkata"},
+    {"city": "Kathmandu", "lat": 27.7172, "lon": 85.3240, "timezone": "Asia/Kathmandu"},
+    {"city": "Dhaka", "lat": 23.8103, "lon": 90.4125, "timezone": "Asia/Dhaka"},
+    {"city": "Bangkok", "lat": 13.7563, "lon": 100.5018, "timezone": "Asia/Bangkok"},
+    {"city": "Singapore", "lat": 1.3521, "lon": 103.8198, "timezone": "Asia/Singapore"},
+    {"city": "Shanghai", "lat": 31.2304, "lon": 121.4737, "timezone": "Asia/Shanghai"},
+    {"city": "Tokyo", "lat": 35.6762, "lon": 139.6503, "timezone": "Asia/Tokyo"},
+    {"city": "Seoul", "lat": 37.5665, "lon": 126.9780, "timezone": "Asia/Seoul"},
+    
+    # Oceania
+    {"city": "Sydney", "lat": -33.8688, "lon": 151.2093, "timezone": "Australia/Sydney"},
+    {"city": "Melbourne", "lat": -37.8136, "lon": 144.9631, "timezone": "Australia/Melbourne"},
+    {"city": "Auckland", "lat": -36.8485, "lon": 174.7633, "timezone": "Pacific/Auckland"},
+    {"city": "Fiji", "lat": -18.1416, "lon": 178.4419, "timezone": "Pacific/Fiji"},
+]
+
+
+# ------------------------------
+# Session state for selected city
+# ------------------------------
+if "selected_city_index" not in st.session_state:
+    st.session_state.selected_city_index = 0
+
+# ------------------------------
+# Prepare ScatterGeo figure
+# ------------------------------
+lons = [c["lon"] for c in cities]
+lats = [c["lat"] for c in cities]
+texts = [c["city"] for c in cities]
+
+fig = go.Figure(go.Scattergeo(
+    lon=lons,
+    lat=lats,
+    mode="markers+text",
+    text=texts,
+    textposition="top center",
+    marker=dict(size=7, color="red", symbol="circle")
+))
+
+fig.update_geos(
+    projection_type="orthographic",
+    showland=True,
+    landcolor="rgb(255, 255, 255)",
+    showcountries=True,
+    countrycolor="black",
+    showocean=True,
+    oceancolor="rgb(255, 255, 255)",
+    showcoastlines=True,
+    coastlinecolor="black",
+    showframe=False,
+    showlakes=False,
+    showrivers=False,
+    lonaxis=dict(showgrid=True, gridcolor="lightgray", dtick=30),
+    lataxis=dict(showgrid=True, gridcolor="lightgray", dtick=15),
+)
+
+fig.update_layout(
+    geo=dict(projection_scale=0.6, center=dict(lat=0, lon=0)),
+    margin={"r":0,"t":0,"l":0,"b":0},
+    paper_bgcolor="white",
+    font_color="black"
+)
+
+# ------------------------------
+# Show the globe (only click selection)
+# ------------------------------
+clicked_points = plotly_events(fig, click_event=True, hover_event=False)
+
+if clicked_points:
+    st.session_state.selected_city_index = clicked_points[0]["pointNumber"]
+
+selected_city = cities[st.session_state.selected_city_index]
+
+# ------------------------------
+# Digital live clock (no infinite loop)
+# ------------------------------
+tz = pytz.timezone(selected_city["timezone"])
+current_time = datetime.now(tz).strftime("%I:%M:%S %p")
+
+st.markdown(
+    f"""
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+                font-size: 36px; font-weight: 600; color: white;">
+        Current Time in {selected_city['city']}: {current_time}
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
 @st.cache_data(ttl=300)
 def fetch_yahoo_data(ticker: str, period="6mo", interval="1d") -> pd.DataFrame:
     try:
@@ -393,8 +513,8 @@ def fetch_google_news(query: str, max_items: int = 8, hl: str = "en-US", gl: str
 # --------------------------
 # Main UI
 # --------------------------
-st.title("POINT.BLANK")
-st.markdown("*Complete Stock Analysis & News Platform*")
+st.title("")
+st.markdown("")
 
 tickers_list = [
     "AAPL","MSFT","GOOG","AMZN","TSLA","META","NVDA","JPM","V","JNJ","WMT",
@@ -583,4 +703,3 @@ else:
     with status_cols[3]:
         status = "✅ Available" if HAS_TF else "❌ Missing"
         st.markdown(f"**LSTM:** {status}")
-

@@ -13,5 +13,3 @@ prophet
 statsmodels
 scikit-learn
 tensorflow
-
-
