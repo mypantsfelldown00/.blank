@@ -109,7 +109,7 @@ from streamlit_plotly_events import plotly_events
 from datetime import datetime
 import pytz
 
-st.set_page_config(page_title="🌍 World Clock Globe", layout="wide")
+st.set_page_config(page_title="POINTBLANK", layout="wide")
 st.title("POINT.BLANK")
 
 # ------------------------------
