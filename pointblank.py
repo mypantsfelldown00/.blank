@@ -16,12 +16,38 @@ import html
 import re
 import time
 import locale
+import talib as ta
+from sklearn.preprocessing import StandardScaler
+from scipy import stats
+from statsmodels.stats.outliers import zscore
 
 # Set locale for proper number formatting
 try:
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 except:
     pass
+
+# --------------------------
+# Import translations
+# --------------------------
+try:
+    from translations import translations, language_names, get_translation as tr
+except ImportError:
+    # Fallback translations if module not found
+    translations = {'en': {}}
+    language_names = {'en': 'English'}
+    def tr(key, lang='en'):
+        return key
+
+# --------------------------
+# Import Technical Analysis
+# --------------------------
+from technical_analysis import (
+    calculate_advanced_indicators,
+    analyze_support_resistance,
+    detect_patterns,
+    generate_market_analysis
+)
 
 # --------------------------
 # ML libraries
@@ -68,6 +94,239 @@ except:
 # --------------------------
 # Translation Dictionaries
 # --------------------------
+
+# Initialize translations with English as base
+base_translations = {
+        # General UI
+        'loading': 'Loading...',
+        'error': 'Error',
+        'success': 'Success',
+        'warning': 'Warning',
+        'close': 'Close',
+        'apply': 'Apply',
+        'reset': 'Reset',
+        'settings': 'Settings',
+        
+        # Market Analysis
+        'market_analysis': 'Market Analysis',
+        'technical_analysis': 'Technical Analysis',
+        'fundamental_analysis': 'Fundamental Analysis',
+        'sentiment_analysis': 'Sentiment Analysis',
+        'volume_analysis': 'Volume Analysis',
+        'trend_analysis': 'Trend Analysis',
+        
+        # Chart Terms
+        'price': 'Price',
+        'volume': 'Volume',
+        'open': 'Open',
+        'high': 'High',
+        'low': 'Low',
+        'close': 'Close',
+        'date': 'Date',
+        'time': 'Time',
+        
+        # Technical Indicators
+        'sma': 'Simple Moving Average',
+        'ema': 'Exponential Moving Average',
+        'rsi': 'Relative Strength Index',
+        'macd': 'MACD',
+        'bollinger_bands': 'Bollinger Bands',
+        'stochastic': 'Stochastic',
+        'atr': 'Average True Range',
+        'obv': 'On Balance Volume',
+        
+        # Market Phases
+        'accumulation': 'Accumulation',
+        'distribution': 'Distribution',
+        'markup': 'Mark Up',
+        'markdown': 'Mark Down',
+        'consolidation': 'Consolidation',
+        
+        # Patterns
+        'pattern': 'Pattern',
+        'support': 'Support',
+        'resistance': 'Resistance',
+        'breakout': 'Breakout',
+        'breakdown': 'Breakdown',
+        'trend_line': 'Trend Line',
+        
+        # Forecast
+        'forecast': 'Forecast',
+        'prediction': 'Prediction',
+        'target': 'Target',
+        'stop_loss': 'Stop Loss',
+        'take_profit': 'Take Profit',
+        
+        # Time Frames
+        'timeframe': 'Time Frame',
+        'daily': 'Daily',
+        'weekly': 'Weekly',
+        'monthly': 'Monthly',
+        'yearly': 'Yearly',
+        'intraday': 'Intraday',
+        
+        # Errors & Warnings
+        'data_error': 'Error loading data',
+        'calculation_error': 'Error in calculations',
+        'insufficient_data': 'Insufficient data',
+        'api_error': 'API Error',
+        'connection_error': 'Connection Error'
+    },
+    
+    'es': {
+        # General UI
+        'loading': 'Cargando...',
+        'error': 'Error',
+        'success': 'Éxito',
+        'warning': 'Advertencia',
+        'close': 'Cerrar',
+        'apply': 'Aplicar',
+        'reset': 'Restablecer',
+        'settings': 'Configuración',
+        
+        # Market Analysis
+        'market_analysis': 'Análisis de Mercado',
+        'technical_analysis': 'Análisis Técnico',
+        'fundamental_analysis': 'Análisis Fundamental',
+        'sentiment_analysis': 'Análisis de Sentimiento',
+        'volume_analysis': 'Análisis de Volumen',
+        'trend_analysis': 'Análisis de Tendencia',
+        
+        # Chart Terms
+        'price': 'Precio',
+        'volume': 'Volumen',
+        'open': 'Apertura',
+        'high': 'Máximo',
+        'low': 'Mínimo',
+        'close': 'Cierre',
+        'date': 'Fecha',
+        'time': 'Hora',
+        
+        # Technical Indicators
+        'sma': 'Media Móvil Simple',
+        'ema': 'Media Móvil Exponencial',
+        'rsi': 'Índice de Fuerza Relativa',
+        'macd': 'MACD',
+        'bollinger_bands': 'Bandas de Bollinger',
+        'stochastic': 'Estocástico',
+        'atr': 'Rango Verdadero Promedio',
+        'obv': 'Balance de Volumen',
+        
+        # Market Phases
+        'accumulation': 'Acumulación',
+        'distribution': 'Distribución',
+        'markup': 'Subida',
+        'markdown': 'Bajada',
+        'consolidation': 'Consolidación',
+        
+        # Patterns
+        'pattern': 'Patrón',
+        'support': 'Soporte',
+        'resistance': 'Resistencia',
+        'breakout': 'Ruptura Alcista',
+        'breakdown': 'Ruptura Bajista',
+        'trend_line': 'Línea de Tendencia',
+        
+        # Forecast
+        'forecast': 'Pronóstico',
+        'prediction': 'Predicción',
+        'target': 'Objetivo',
+        'stop_loss': 'Stop Loss',
+        'take_profit': 'Toma de Beneficios',
+        
+        # Time Frames
+        'timeframe': 'Marco Temporal',
+        'daily': 'Diario',
+        'weekly': 'Semanal',
+        'monthly': 'Mensual',
+        'yearly': 'Anual',
+        'intraday': 'Intradía',
+        
+        # Errors & Warnings
+        'data_error': 'Error al cargar datos',
+        'calculation_error': 'Error en los cálculos',
+        'insufficient_data': 'Datos insuficientes',
+        'api_error': 'Error de API',
+        'connection_error': 'Error de conexión'
+    },
+    
+    'zh': {
+        # General UI
+        'loading': '加载中...',
+        'error': '错误',
+        'success': '成功',
+        'warning': '警告',
+        'close': '关闭',
+        'apply': '应用',
+        'reset': '重置',
+        'settings': '设置',
+        
+        # Market Analysis
+        'market_analysis': '市场分析',
+        'technical_analysis': '技术分析',
+        'fundamental_analysis': '基本面分析',
+        'sentiment_analysis': '情绪分析',
+        'volume_analysis': '成交量分析',
+        'trend_analysis': '趋势分析',
+        
+        # Chart Terms
+        'price': '价格',
+        'volume': '成交量',
+        'open': '开盘价',
+        'high': '最高价',
+        'low': '最低价',
+        'close': '收盘价',
+        'date': '日期',
+        'time': '时间',
+        
+        # Technical Indicators
+        'sma': '简单移动平均线',
+        'ema': '指数移动平均线',
+        'rsi': '相对强弱指标',
+        'macd': 'MACD指标',
+        'bollinger_bands': '布林带',
+        'stochastic': '随机指标',
+        'atr': '真实波幅均值',
+        'obv': '能量潮指标',
+        
+        # Market Phases
+        'accumulation': '积累期',
+        'distribution': '分配期',
+        'markup': '上升期',
+        'markdown': '下降期',
+        'consolidation': '盘整期',
+        
+        # Patterns
+        'pattern': '形态',
+        'support': '支撑位',
+        'resistance': '阻力位',
+        'breakout': '突破',
+        'breakdown': '跌破',
+        'trend_line': '趋势线',
+        
+        # Forecast
+        'forecast': '预测',
+        'prediction': '预期',
+        'target': '目标价',
+        'stop_loss': '止损',
+        'take_profit': '止盈',
+        
+        # Time Frames
+        'timeframe': '时间周期',
+        'daily': '日线',
+        'weekly': '周线',
+        'monthly': '月线',
+        'yearly': '年线',
+        'intraday': '日内',
+        
+        # Errors & Warnings
+        'data_error': '数据加载错误',
+        'calculation_error': '计算错误',
+        'insufficient_data': '数据不足',
+        'api_error': 'API错误',
+        'connection_error': '连接错误'
+    }
+}
 translations = {
     "en": {
         "disclaimer_title": "DISCLAIMER",
@@ -1001,19 +1260,37 @@ def get_currency_info(ticker: str):
 # Forecasting Models
 # --------------------------
 def forecast_all(df: pd.DataFrame, periods: int = 30):
+    if df.empty or len(df) < 2:
+        st.error(tr('insufficient_data_error', st.session_state.user_lang))
+        return {}
     forecasts = {}
 
-    # ==============================
-    # Enhanced Prophet
-    # ==============================
+    # Enhanced Prophet with advanced features
     if HAS_PROPHET:
         try:
+            # Prepare data with more features
             prophet_df = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'}).copy()
-            prophet_df['ds'] = pd.to_datetime(prophet_df['ds']).dt.tz_localize(None)
+            prophet_df['ds'] = pd.to_datetime(prophet_df['ds'])
+            if prophet_df['ds'].dt.tz is not None:
+                prophet_df['ds'] = prophet_df['ds'].dt.tz_localize(None)
 
-            # Dynamic changepoint scale (more flexible if volatile)
+            # Add technical indicators and market features
+            feature_cols = ['Volume', 'RSI', 'MACD', 'MA20', 'MA50', 'BB_UP', 'BB_LOW', 'Signal']
+            for col in feature_cols:
+                if col in df.columns:
+                    prophet_df[col.lower()] = df[col].fillna(df[col].median())
+
+            # Add price momentum features
+            prophet_df['price_momentum'] = df['Close'].pct_change(5)
+            try:
+                mean = df['Close'].rolling(window=20).mean()
+                prophet_df['volatility'] = df['Close'].rolling(window=20).std() / mean.where(mean != 0, 1)
+            except Exception:
+                prophet_df['volatility'] = 0  # Default value if calculation fails
+            
+            # Adaptive changepoint detection
             vol = prophet_df['y'].pct_change().std()
-            changepoint_scale = 0.05 if vol < 0.02 else 0.2
+            changepoint_scale = np.clip(vol * 10, 0.05, 0.5)  # Dynamic scaling
 
             m = Prophet(
                 growth='linear',
@@ -1025,29 +1302,33 @@ def forecast_all(df: pd.DataFrame, periods: int = 30):
                 seasonality_prior_scale=15.0,
                 holidays_prior_scale=15.0,
                 interval_width=0.95,
-                uncertainty_samples=1000
+                uncertainty_samples=2000,
+                mcmc_samples=500
             )
 
             # Add custom seasonalities
             m.add_seasonality(name='monthly', period=30.5, fourier_order=8)
             m.add_seasonality(name='quarterly', period=91.25, fourier_order=10)
+            m.add_seasonality(name='biannual', period=182.5, fourier_order=12)
 
-            # Add known regressors
-            for col in ['Volume', 'RSI', 'MACD', 'MA20', 'MA50']:
-                if col in df.columns:
-                    prophet_df[col.lower()] = df[col].fillna(df[col].mean())
-                    m.add_regressor(col.lower())
+            # Add all features as regressors
+            for col in prophet_df.columns:
+                if col not in ['ds', 'y']:
+                    m.add_regressor(col, mode='multiplicative')
 
             m.fit(prophet_df)
 
-            # Future DataFrame
+            # Generate future dataframe with feature projections
             future = m.make_future_dataframe(periods=periods, freq='D')
             future['ds'] = pd.to_datetime(future['ds']).dt.tz_localize(None)
-
-            for col in ['volume', 'rsi', 'macd', 'ma20', 'ma50']:
-                if col in prophet_df.columns:
-                    last_val = prophet_df[col].iloc[-1]
-                    future[col] = last_val
+            
+            # Project features using exponential smoothing
+            for col in prophet_df.columns:
+                if col not in ['ds', 'y']:
+                    alpha = 0.7  # Smoothing factor
+                    last_value = prophet_df[col].iloc[-1]
+                    trend = prophet_df[col].diff().mean()
+                    future[col] = [last_value + trend * i * alpha for i in range(len(future))]
 
             forecast = m.predict(future)
             fc = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].rename(columns={'ds': 'Date'})
@@ -1056,178 +1337,97 @@ def forecast_all(df: pd.DataFrame, periods: int = 30):
         except Exception as e:
             st.error(f"{tr('prophet_error', st.session_state.user_lang)}: {e}")
 
-    # ==============================
-    # ARIMA Forecast
-    # ==============================
+    # Enhanced ARIMA with advanced features
     if HAS_ARIMA:
         try:
             series = df.set_index('Date')['Close'].sort_index()
             series.index = pd.to_datetime(series.index).tz_localize(None)
-
-            # Fill missing dates
+            
+            # Fill missing dates with cubic interpolation
             daily_idx = pd.date_range(series.index.min(), series.index.max(), freq='D')
-            series = series.reindex(daily_idx).ffill().bfill()  # forward & backward fill
+            series = series.reindex(daily_idx).interpolate(method='cubic')
 
-            # Automatic order selection if dataset is large enough
+            # Create advanced exogenous variables
+            exog_data = []
+            if 'Volume' in df.columns:
+                exog_data.append(df['Volume'].rolling(5).mean())
+            if 'RSI' in df.columns:
+                exog_data.append(df['RSI'])
+            if 'MACD' in df.columns:
+                exog_data.append(df['MACD'])
+            
+            # Add price-based features
+            returns = series.pct_change()
+            volatility = returns.rolling(20).std()
+            momentum = returns.rolling(5).mean()
+            
+            exog = pd.concat([pd.Series(d) for d in exog_data + [volatility, momentum]], axis=1)
+            exog = exog.reindex(daily_idx).interpolate(method='cubic')
+            exog = exog.fillna(method='ffill').fillna(method='bfill')  # Handle any remaining NaN values
+
+            # Use auto_arima with advanced configuration
             try:
-                # Use simple ARIMA if dataset is small
-                order = (5, 1, 0) if len(series) < 500 else None
-                if order is None:
-                    import pmdarima as pm
-                    model = pm.auto_arima(series, seasonal=False, stepwise=True, suppress_warnings=True, max_p=10, max_q=10)
-                    order = model.order
+                import pmdarima as pm
+                model = pm.auto_arima(
+                    series,
+                    exogenous=exog,
+                    start_p=1, start_q=1,
+                    max_p=10, max_q=10,
+                    seasonal=True,
+                    m=5,  # Weekly seasonality
+                    start_P=0, start_Q=0,
+                    max_P=2, max_Q=2,
+                    D=1,
+                    trace=True,
+                    error_action='ignore',
+                    suppress_warnings=True,
+                    stepwise=True,
+                    n_jobs=-1
+                )
+                order = model.order
+                seasonal_order = model.seasonal_order
             except Exception:
-                order = (5, 1, 0)  # fallback
+                order = (5, 1, 2)
+                seasonal_order = (1, 1, 1, 5)
 
-            model = ARIMA(series, order=order).fit()
-            fc = model.forecast(steps=periods)
+            # Fit ARIMA with complete configuration
+            arima_model = ARIMA(
+                series,
+                order=order,
+                seasonal_order=seasonal_order,
+                exog=exog
+            ).fit(method='statespace')
+
+            # Generate future exogenous data
+            future_exog = pd.DataFrame(index=pd.date_range(
+                start=series.index[-1] + timedelta(days=1),
+                periods=periods,
+                freq='D'
+            ))
+            
+            # Project exogenous variables
+            for col in exog.columns:
+                last_value = exog[col].iloc[-1]
+                trend = exog[col].diff().mean()
+                future_exog[col] = [last_value + trend * i for i in range(periods)]
+
+            # Generate forecasts with confidence intervals
+            fc = arima_model.forecast(steps=periods, exog=future_exog)
             dates = pd.date_range(start=series.index[-1] + timedelta(days=1), periods=periods)
-            forecasts['ARIMA'] = pd.DataFrame({'Date': dates, 'yhat': fc.values})
+            
+            # Add confidence intervals
+            conf_int = arima_model.get_forecast(steps=periods, exog=future_exog).conf_int()
+            forecasts['ARIMA'] = pd.DataFrame({
+                'Date': dates,
+                'yhat': fc,
+                'yhat_lower': conf_int.iloc[:, 0],
+                'yhat_upper': conf_int.iloc[:, 1]
+            })
 
         except Exception as e:
             st.error(f"{tr('arima_error', st.session_state.user_lang)}: {e}")
 
-    # ==============================
-    # RandomForest Forecast
-    # ==============================
-    if HAS_SKLEARN:
-        try:
-            data = df[['Close']].copy()
-            n_lags = min(10, len(data)//2)  # dynamic lag selection for small datasets
-
-            for lag in range(1, n_lags+1):
-                data[f'lag_{lag}'] = data['Close'].shift(lag)
-            data = data.dropna()
-
-            X = data[[f'lag_{i}' for i in range(1, n_lags+1)]].values
-            y = data['Close'].values
-
-            model = RandomForestRegressor(n_estimators=500, max_depth=None, random_state=42, n_jobs=-1)
-            model.fit(X, y)
-
-            # Iterative multi-step forecast
-            last_window = X[-1].tolist()
-            preds = []
-            for _ in range(periods):
-                p = float(model.predict([last_window]))
-                preds.append(p)
-                last_window = [p] + last_window[:-1]
-
-            dates = pd.date_range(start=df['Date'].iloc[-1] + timedelta(days=1), periods=periods)
-            forecasts['RandomForest'] = pd.DataFrame({'Date': dates, 'yhat': preds})
-
-        except Exception as e:
-            st.error(f"{tr('rf_error', st.session_state.user_lang)}: {e}")
-
-    # ==============================
-    # Enhanced LSTM
-    # ==============================
-    if HAS_TF and HAS_SKLEARN:
-        try:
-            features_df = df.copy()
-            feature_cols = ['Close', 'Volume', 'High', 'Low', 'Open']
-            extra_cols = ['RSI', 'MACD', 'MA20', 'MA50']
-            feature_cols.extend([c for c in extra_cols if c in df.columns])
-
-            feature_data = features_df[feature_cols].fillna(method='ffill').fillna(method='bfill')
-
-            scaler = MinMaxScaler()
-            scaled_data = scaler.fit_transform(feature_data)
-
-            # Adjust sequence length for small datasets
-            default_sequence_length = 60
-            sequence_length = min(default_sequence_length, len(scaled_data) // 2)
-            if sequence_length < 10:
-                st.warning(tr('lstm_warning1', st.session_state.user_lang))
-                forecasts['LSTM'] = None
-            else:
-                X_sequences, y_sequences = [], []
-
-                for i in range(sequence_length, len(scaled_data)):
-                    X_sequences.append(scaled_data[i - sequence_length:i])
-                    y_sequences.append(scaled_data[i, 0])  # Close price
-
-                X_sequences, y_sequences = np.array(X_sequences), np.array(y_sequences)
-
-                # Skip if still too few sequences
-                if len(X_sequences) < 50:
-                    st.warning(tr('lstm_warning2', st.session_state.user_lang))
-                    forecasts['LSTM'] = None
-                else:
-                    # Train-test split
-                    train_size = int(len(X_sequences) * 0.8)
-                    X_train, X_test = X_sequences[:train_size], X_sequences[train_size:]
-                    y_train, y_test = y_sequences[:train_size], y_sequences[train_size:]
-
-                    tf.keras.backend.clear_session()
-
-                    model = Sequential([
-                        LSTM(128, return_sequences=True, input_shape=(sequence_length, len(feature_cols))),
-                        Dropout(0.3),
-                        BatchNormalization(),
-
-                        Bidirectional(LSTM(64, return_sequences=True)),
-                        Dropout(0.3),
-                        BatchNormalization(),
-
-                        LSTM(32, return_sequences=False),
-                        Dropout(0.2),
-
-                        Dense(64, activation='relu'),
-                        Dense(32, activation='relu'),
-                        Dense(1, activation='linear')
-                    ])
-
-                    optimizer = optimizers.Adam(learning_rate=0.001)
-                    model.compile(
-                        optimizer=optimizer,
-                        loss=tf.keras.losses.Huber(),
-                        metrics=['mae', 'mse']
-                    )
-
-                    callbacks_list = [
-                        callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True),
-                        callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-5),
-                        callbacks.ModelCheckpoint("best_lstm.h5", save_best_only=True, monitor="val_loss")
-                    ]
-
-                    model.fit(
-                        X_train, y_train,
-                        epochs=100,
-                        batch_size=32,
-                        validation_data=(X_test, y_test),
-                        callbacks=callbacks_list,
-                        verbose=0
-                    )
-
-                    # Iterative forecasting
-                    last_sequence = scaled_data[-sequence_length:]
-                    predictions_scaled = []
-
-                    for _ in range(periods):
-                        seq_input = last_sequence.reshape(1, sequence_length, len(feature_cols))
-                        pred_scaled = float(model.predict(seq_input, verbose=0)[0, 0])
-                        predictions_scaled.append(pred_scaled)
-
-                        new_row = last_sequence[-1].copy()
-                        new_row[0] = pred_scaled
-                        last_sequence = np.vstack([last_sequence[1:], new_row])
-
-                    # Inverse scaling
-                    pred_array = np.zeros((periods, len(feature_cols)))
-                    pred_array[:, 0] = predictions_scaled
-                    for i in range(1, len(feature_cols)):
-                        pred_array[:, i] = scaled_data[-1, i]
-
-                    pred_inverse = scaler.inverse_transform(pred_array)
-                    predictions = pred_inverse[:, 0].tolist()
-
-                    dates = pd.date_range(start=df['Date'].iloc[-1] + timedelta(days=1), periods=periods)
-                    forecasts['LSTM'] = pd.DataFrame({'Date': dates, 'yhat': predictions})
-
-        except Exception as e:
-            st.error(f"{tr('lstm_error', st.session_state.user_lang)}: {e}")
-
+    
     return forecasts
 
 # --------------------------
