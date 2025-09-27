@@ -1062,6 +1062,9 @@ def forecast_all(df: pd.DataFrame, periods: int = 30):
     # ==============================
 # ARIMA Forecast (Simplified - without pmdarima)
 # ==============================
+# ==============================
+# ARIMA Forecast (Simplified - without pmdarima)
+# ==============================
 if HAS_ARIMA:
     try:
         series = df.set_index('Date')['Close'].sort_index()
@@ -1076,7 +1079,7 @@ if HAS_ARIMA:
         
         model = ARIMA(series, order=order).fit()
         fc = model.forecast(steps=periods)
-        dates = pd.date_start = series.index[-1] + timedelta(days=1), periods=periods)
+        dates = pd.date_range(start=series.index[-1] + timedelta(days=1), periods=periods)  # FIXED LINE
         forecasts['ARIMA'] = pd.DataFrame({'Date': dates, 'yhat': fc.values})
 
     except Exception as e:
@@ -1636,4 +1639,5 @@ else:
 if __name__ == "__main__":
     # This allows the app to run on Render
     pass
+
 
