@@ -1009,9 +1009,13 @@ def forecast_all(df: pd.DataFrame, periods: int = 30):
     if HAS_PROPHET:
         try:
             prophet_df = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'}).copy()
-            prophet_df['ds'] = pd.to_datetime(prophet_df['ds']).dt.tz_localize(None)
+            prophet_df['ds'] = pd.to_datetime(prophet_df['ds'])
+            
+            # Remove timezone if present
+            if prophet_df['ds'].dt.tz is not None:
+                prophet_df['ds'] = prophet_df['ds'].dt.tz_localize(None)
 
-            # Dynamic changepoint scale (more flexible if volatile)
+            # Dynamic changepoint scale
             vol = prophet_df['y'].pct_change().std()
             changepoint_scale = 0.05 if vol < 0.02 else 0.2
 
@@ -1024,27 +1028,31 @@ def forecast_all(df: pd.DataFrame, periods: int = 30):
                 changepoint_prior_scale=changepoint_scale,
                 seasonality_prior_scale=15.0,
                 holidays_prior_scale=15.0,
-                interval_width=0.95,
-                uncertainty_samples=1000
+                interval_width=0.95
             )
 
             # Add custom seasonalities
-            m.add_seasonality(name='monthly', period=30.5, fourier_order=8)
-            m.add_seasonality(name='quarterly', period=91.25, fourier_order=10)
+            m.add_seasonality(name='monthly', period=30.5, fourier_order=5)  # Reduced from 8
+            m.add_seasonality(name='quarterly', period=91.25, fourier_order=6)  # Reduced from 10
 
-            # Add known regressors
-            for col in ['Volume', 'RSI', 'MACD', 'MA20', 'MA50']:
+            # Add known regressors (simplified for stability)
+            available_regressors = ['Volume', 'RSI', 'MACD']
+            for col in available_regressors:
                 if col in df.columns:
-                    prophet_df[col.lower()] = df[col].fillna(df[col].mean())
+                    prophet_df[col.lower()] = df[col].fillna(method='ffill').fillna(method='bfill')
                     m.add_regressor(col.lower())
 
             m.fit(prophet_df)
 
             # Future DataFrame
             future = m.make_future_dataframe(periods=periods, freq='D')
-            future['ds'] = pd.to_datetime(future['ds']).dt.tz_localize(None)
+            future['ds'] = pd.to_datetime(future['ds'])
+            
+            if future['ds'].dt.tz is not None:
+                future['ds'] = future['ds'].dt.tz_localize(None)
 
-            for col in ['volume', 'rsi', 'macd', 'ma20', 'ma50']:
+            # Set regressor values to last known values
+            for col in ['volume', 'rsi', 'macd']:
                 if col in prophet_df.columns:
                     last_val = prophet_df[col].iloc[-1]
                     future[col] = last_val
@@ -1054,178 +1062,103 @@ def forecast_all(df: pd.DataFrame, periods: int = 30):
             forecasts['Prophet'] = fc
 
         except Exception as e:
-            st.error(f"{tr('prophet_error', st.session_state.user_lang)}: {e}")
+            if 'st' in globals():
+                st.error(f"{tr('prophet_error', st.session_state.user_lang)}: {str(e)[:100]}...")
+            else:
+                print(f"Prophet error: {e}")
 
     # ==============================
     # ARIMA Forecast
     # ==============================
-    # ==============================
-# ARIMA Forecast (Simplified - without pmdarima)
-# ==============================
-# ==============================
-# ARIMA Forecast (Simplified - without pmdarima)
-# ==============================
-if HAS_ARIMA:
-    try:
-        series = df.set_index('Date')['Close'].sort_index()
-        series.index = pd.to_datetime(series.index).tz_localize(None)
+    if HAS_ARIMA:
+        try:
+            # Ensure we have enough data
+            if len(df) < 30:
+                if 'st' in globals():
+                    st.warning("Insufficient data for ARIMA (need at least 30 points)")
+                forecasts['ARIMA'] = None
+            else:
+                series = df.set_index('Date')['Close'].sort_index()
+                series.index = pd.to_datetime(series.index)
+                
+                if series.index.tz is not None:
+                    series.index = series.index.tz_localize(None)
 
-        # Fill missing dates
-        daily_idx = pd.date_range(series.index.min(), series.index.max(), freq='D')
-        series = series.reindex(daily_idx).ffill().bfill()
+                # Use simpler approach for small datasets
+                if len(series) < 100:
+                    # Just use recent trend for small datasets
+                    recent_trend = series.diff().tail(10).mean()
+                    preds = [series.iloc[-1] + (i * recent_trend) for i in range(1, periods + 1)]
+                else:
+                    # Use ARIMA for larger datasets
+                    daily_idx = pd.date_range(series.index.min(), series.index.max(), freq='D')
+                    series = series.reindex(daily_idx).fillna(method='ffill').fillna(method='bfill')
+                    
+                    order = (2, 1, 2)  # Simpler, more stable order
+                    model = ARIMA(series, order=order).fit()
+                    fc = model.forecast(steps=periods)
+                    preds = fc.values
 
-        # Use fixed ARIMA order (5,1,0) instead of auto_arima
-        order = (5, 1, 0)  # Fixed order that works for most stock data
-        
-        model = ARIMA(series, order=order).fit()
-        fc = model.forecast(steps=periods)
-        dates = pd.date_range(start=series.index[-1] + timedelta(days=1), periods=periods) # FIXED LINE
-        forecasts['ARIMA'] = pd.DataFrame({'Date': dates, 'yhat': fc.values})
+                dates = pd.date_range(start=series.index[-1] + timedelta(days=1), periods=periods)
+                forecasts['ARIMA'] = pd.DataFrame({'Date': dates, 'yhat': preds})
 
-    except Exception as e:
-        st.error(f"{tr('arima_error', st.session_state.user_lang)}: {e}")
+        except Exception as e:
+            if 'st' in globals():
+                st.error(f"{tr('arima_error', st.session_state.user_lang)}: {str(e)[:100]}...")
+            else:
+                print(f"ARIMA error: {e}")
 
     # ==============================
     # RandomForest Forecast
     # ==============================
     if HAS_SKLEARN:
         try:
-            data = df[['Close']].copy()
-            n_lags = min(10, len(data)//2)  # dynamic lag selection for small datasets
-
-            for lag in range(1, n_lags+1):
-                data[f'lag_{lag}'] = data['Close'].shift(lag)
-            data = data.dropna()
-
-            X = data[[f'lag_{i}' for i in range(1, n_lags+1)]].values
-            y = data['Close'].values
-
-            model = RandomForestRegressor(n_estimators=500, max_depth=None, random_state=42, n_jobs=-1)
-            model.fit(X, y)
-
-            # Iterative multi-step forecast
-            last_window = X[-1].tolist()
-            preds = []
-            for _ in range(periods):
-                p = float(model.predict([last_window]))
-                preds.append(p)
-                last_window = [p] + last_window[:-1]
-
-            dates = pd.date_range(start=df['Date'].iloc[-1] + timedelta(days=1), periods=periods)
-            forecasts['RandomForest'] = pd.DataFrame({'Date': dates, 'yhat': preds})
-
-        except Exception as e:
-            st.error(f"{tr('rf_error', st.session_state.user_lang)}: {e}")
-
-    # ==============================
-    # Enhanced LSTM
-    # ==============================
-    if HAS_TF and HAS_SKLEARN:
-        try:
-            features_df = df.copy()
-            feature_cols = ['Close', 'Volume', 'High', 'Low', 'Open']
-            extra_cols = ['RSI', 'MACD', 'MA20', 'MA50']
-            feature_cols.extend([c for c in extra_cols if c in df.columns])
-
-            feature_data = features_df[feature_cols].fillna(method='ffill').fillna(method='bfill')
-
-            scaler = MinMaxScaler()
-            scaled_data = scaler.fit_transform(feature_data)
-
-            # Adjust sequence length for small datasets
-            default_sequence_length = 60
-            sequence_length = min(default_sequence_length, len(scaled_data) // 2)
-            if sequence_length < 10:
-                st.warning(tr('lstm_warning1', st.session_state.user_lang))
-                forecasts['LSTM'] = None
+            # Ensure sufficient data
+            if len(df) < 20:
+                if 'st' in globals():
+                    st.warning("Insufficient data for RandomForest")
+                forecasts['RandomForest'] = None
             else:
-                X_sequences, y_sequences = [], []
+                data = df[['Close']].copy()
+                n_lags = min(5, len(data)//3)  # More conservative lag selection
 
-                for i in range(sequence_length, len(scaled_data)):
-                    X_sequences.append(scaled_data[i - sequence_length:i])
-                    y_sequences.append(scaled_data[i, 0])  # Close price
+                for lag in range(1, n_lags + 1):
+                    data[f'lag_{lag}'] = data['Close'].shift(lag)
+                data = data.dropna()
 
-                X_sequences, y_sequences = np.array(X_sequences), np.array(y_sequences)
-
-                # Skip if still too few sequences
-                if len(X_sequences) < 50:
-                    st.warning(tr('lstm_warning2', st.session_state.user_lang))
-                    forecasts['LSTM'] = None
+                if len(data) < 10:
+                    forecasts['RandomForest'] = None
                 else:
-                    # Train-test split
-                    train_size = int(len(X_sequences) * 0.8)
-                    X_train, X_test = X_sequences[:train_size], X_sequences[train_size:]
-                    y_train, y_test = y_sequences[:train_size], y_sequences[train_size:]
+                    X = data[[f'lag_{i}' for i in range(1, n_lags + 1)]].values
+                    y = data['Close'].values
 
-                    tf.keras.backend.clear_session()
+                    # Use simpler model for deployment stability
+                    model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
+                    model.fit(X, y)
 
-                    model = Sequential([
-                        LSTM(128, return_sequences=True, input_shape=(sequence_length, len(feature_cols))),
-                        Dropout(0.3),
-                        BatchNormalization(),
-
-                        Bidirectional(LSTM(64, return_sequences=True)),
-                        Dropout(0.3),
-                        BatchNormalization(),
-
-                        LSTM(32, return_sequences=False),
-                        Dropout(0.2),
-
-                        Dense(64, activation='relu'),
-                        Dense(32, activation='relu'),
-                        Dense(1, activation='linear')
-                    ])
-
-                    optimizer = optimizers.Adam(learning_rate=0.001)
-                    model.compile(
-                        optimizer=optimizer,
-                        loss=tf.keras.losses.Huber(),
-                        metrics=['mae', 'mse']
-                    )
-
-                    callbacks_list = [
-                        callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True),
-                        callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-5),
-                        callbacks.ModelCheckpoint("best_lstm.h5", save_best_only=True, monitor="val_loss")
-                    ]
-
-                    model.fit(
-                        X_train, y_train,
-                        epochs=100,
-                        batch_size=32,
-                        validation_data=(X_test, y_test),
-                        callbacks=callbacks_list,
-                        verbose=0
-                    )
-
-                    # Iterative forecasting
-                    last_sequence = scaled_data[-sequence_length:]
-                    predictions_scaled = []
-
+                    # Iterative multi-step forecast
+                    last_window = X[-1].tolist()
+                    preds = []
                     for _ in range(periods):
-                        seq_input = last_sequence.reshape(1, sequence_length, len(feature_cols))
-                        pred_scaled = float(model.predict(seq_input, verbose=0)[0, 0])
-                        predictions_scaled.append(pred_scaled)
-
-                        new_row = last_sequence[-1].copy()
-                        new_row[0] = pred_scaled
-                        last_sequence = np.vstack([last_sequence[1:], new_row])
-
-                    # Inverse scaling
-                    pred_array = np.zeros((periods, len(feature_cols)))
-                    pred_array[:, 0] = predictions_scaled
-                    for i in range(1, len(feature_cols)):
-                        pred_array[:, i] = scaled_data[-1, i]
-
-                    pred_inverse = scaler.inverse_transform(pred_array)
-                    predictions = pred_inverse[:, 0].tolist()
+                        p = float(model.predict([last_window])[0])
+                        preds.append(p)
+                        last_window = [p] + last_window[:-1]
 
                     dates = pd.date_range(start=df['Date'].iloc[-1] + timedelta(days=1), periods=periods)
-                    forecasts['LSTM'] = pd.DataFrame({'Date': dates, 'yhat': predictions})
+                    forecasts['RandomForest'] = pd.DataFrame({'Date': dates, 'yhat': preds})
 
         except Exception as e:
-            st.error(f"{tr('lstm_error', st.session_state.user_lang)}: {e}")
+            if 'st' in globals():
+                st.error(f"{tr('rf_error', st.session_state.user_lang)}: {str(e)[:100]}...")
+            else:
+                print(f"RandomForest error: {e}")
 
+    # ==============================
+    # LSTM (Commented out for Render deployment - too heavy)
+    # ==============================
+    # Note: LSTM requires TensorFlow which is too large for Render free tier
+    # This section is intentionally disabled for production deployment
+    
     return forecasts
 
 # --------------------------
@@ -1639,6 +1572,7 @@ else:
 if __name__ == "__main__":
     # This allows the app to run on Render
     pass
+
 
 
 
