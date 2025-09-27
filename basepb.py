@@ -1059,33 +1059,28 @@ def forecast_all(df: pd.DataFrame, periods: int = 30):
     # ==============================
     # ARIMA Forecast
     # ==============================
-    if HAS_ARIMA:
-        try:
-            series = df.set_index('Date')['Close'].sort_index()
-            series.index = pd.to_datetime(series.index).tz_localize(None)
+    # ==============================
+# ARIMA Forecast (Simplified - without pmdarima)
+# ==============================
+if HAS_ARIMA:
+    try:
+        series = df.set_index('Date')['Close'].sort_index()
+        series.index = pd.to_datetime(series.index).tz_localize(None)
 
-            # Fill missing dates
-            daily_idx = pd.date_range(series.index.min(), series.index.max(), freq='D')
-            series = series.reindex(daily_idx).ffill().bfill()  # forward & backward fill
+        # Fill missing dates
+        daily_idx = pd.date_range(series.index.min(), series.index.max(), freq='D')
+        series = series.reindex(daily_idx).ffill().bfill()
 
-            # Automatic order selection if dataset is large enough
-            try:
-                # Use simple ARIMA if dataset is small
-                order = (5, 1, 0) if len(series) < 500 else None
-                if order is None:
-                    import pmdarima as pm
-                    model = pm.auto_arima(series, seasonal=False, stepwise=True, suppress_warnings=True, max_p=10, max_q=10)
-                    order = model.order
-            except Exception:
-                order = (5, 1, 0)  # fallback
+        # Use fixed ARIMA order (5,1,0) instead of auto_arima
+        order = (5, 1, 0)  # Fixed order that works for most stock data
+        
+        model = ARIMA(series, order=order).fit()
+        fc = model.forecast(steps=periods)
+        dates = pd.date_start = series.index[-1] + timedelta(days=1), periods=periods)
+        forecasts['ARIMA'] = pd.DataFrame({'Date': dates, 'yhat': fc.values})
 
-            model = ARIMA(series, order=order).fit()
-            fc = model.forecast(steps=periods)
-            dates = pd.date_range(start=series.index[-1] + timedelta(days=1), periods=periods)
-            forecasts['ARIMA'] = pd.DataFrame({'Date': dates, 'yhat': fc.values})
-
-        except Exception as e:
-            st.error(f"{tr('arima_error', st.session_state.user_lang)}: {e}")
+    except Exception as e:
+        st.error(f"{tr('arima_error', st.session_state.user_lang)}: {e}")
 
     # ==============================
     # RandomForest Forecast
@@ -1641,3 +1636,4 @@ else:
 if __name__ == "__main__":
     # This allows the app to run on Render
     pass
+
