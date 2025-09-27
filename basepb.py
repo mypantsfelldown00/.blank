@@ -1636,3 +1636,8 @@ else:
     with status_cols[3]:
         status = f"✅ {tr('available', st.session_state.user_lang)}" if HAS_TF else f"❌ {tr('missing', st.session_state.user_lang)}"
         st.markdown(f"**{tr('lstm', st.session_state.user_lang)}:** {status}")
+
+
+if __name__ == "__main__":
+    # This allows the app to run on Render
+    pass
