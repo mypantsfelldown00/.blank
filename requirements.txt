@@ -1,15 +1,17 @@
-# Core app
-streamlit
-yfinance
-pandas
-numpy
-plotly
-streamlit-plotly-events
-pytz
-feedparser
+streamlit>=1.28.0
+yfinance>=0.2.18
+pandas>=1.5.0
+numpy>=1.24.0
+plotly>=5.13.0
+streamlit-plotly-events>=0.0.4
+pytz>=2023.3
+feedparser>=6.0.10
+html5lib>=1.1
+lxml>=4.9.0
 
-# Forecasting models
-prophet
-statsmodels
-scikit-learn
-tensorflow
+# Optional ML packages (comment out if not needed)
+prophet>=1.1.0
+statsmodels>=0.13.5
+scikit-learn>=1.2.0
+tensorflow>=2.12.0
+pmdarima>=2.0.3
