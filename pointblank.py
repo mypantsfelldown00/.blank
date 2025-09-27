@@ -273,7 +273,7 @@ Pour des conseils financiers personnalisés, veuillez consulter un conseiller fi
         "lstm_warning1": "Jeu de données trop petit pour LSTM. Ignorer la prévision LSTM.",
         "lstm_warning2": "Pas assez de séquences pour l'entraînement LSTM. Ignorer LSTM.",
         "language_select": "Sélectionnez votre langue préférée",
-        "city_select": "Sélectionnez votre ville sur le globe",
+        "city_select": "Seleccione su ciudad en el globo",
         "current_time": "Heure Actuelle"
     },
     "pt": {
@@ -307,7 +307,7 @@ Para orientação financiera personalizada, consulte um consultor financeiro lic
         "download_csv": "Baixar dados brutos (CSV)",
         "download_json": "Baixar dados históricos (JSON)",
         "download_news": "Baixar dados de notícias (CSV)",
-        "recent_data": "Dados históricos recentes",
+        "recent_data": "Datos históricos recientes",
         "select_ticker": "Selecione a ticker e pressione **'Executar'** para obter uma análise completa de ações com previsões e notícias!",
         "model_status": "Status de disponibilidade do modelo",
         "available": "Disponível",
@@ -746,9 +746,93 @@ body, .stApp {
     border: 1px solid var(--border);
     padding: 0.55em 1em;
     font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-.stTextInput>div>div>input, .stSelectbox>div>div, .stSlider>div>div {
+.stButton>button:hover {
+    background-color: var(--accent);
+    color: var(--bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+}
+
+/* Enhanced Dropdown Styles */
+.stSelectbox>div>div {
+    background-color: var(--card) !important;
+    color: var(--text) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border) !important;
+    padding: 0.5rem !important;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.stSelectbox>div>div:hover {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.stSelectbox>div>div:focus-within {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
+}
+
+.stSelectbox>div>div>div {
+    color: var(--text) !important;
+    font-weight: 500;
+}
+
+/* Dropdown options container */
+div[data-baseweb="popover"] {
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+
+div[data-baseweb="menu"] {
+    background-color: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    margin-top: 4px;
+}
+
+/* Dropdown options */
+div[data-baseweb="menu"] li {
+    background-color: var(--card) !important;
+    color: var(--text) !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+div[data-baseweb="menu"] li:hover {
+    background-color: var(--accent) !important;
+    color: var(--bg) !important;
+}
+
+div[data-baseweb="menu"] li:last-child {
+    border-bottom: none;
+}
+
+/* Checkbox styling */
+.stCheckbox>label {
+    color: var(--text) !important;
+    font-weight: 500;
+}
+
+.stCheckbox>div>div {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.stCheckbox>div>div:hover {
+    border-color: var(--accent);
+}
+
+.stTextInput>div>div>input, .stSlider>div>div {
     background-color: var(--card);
     color: var(--text);
     border-radius: 10px;
@@ -855,15 +939,6 @@ a.card-link {
     font-weight: 600;
 }
 
-.stSelectbox div[data-baseweb="select"] {
-    background-color: var(--card);
-    border-radius: 10px;
-}
-
-.stSelectbox div[data-baseweb="select"] div {
-    color: var(--text);
-}
-
 .streamlit-expanderHeader {
     background-color: var(--card);
     border-radius: 10px;
@@ -876,6 +951,30 @@ a.card-link {
     border-radius: 0 0 10px 10px;
     border: 1px solid var(--border);
     border-top: none;
+}
+
+/* Custom scrollbar for dropdown */
+div[data-baseweb="menu"] ul {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--border);
+}
+
+div[data-baseweb="menu"] ul::-webkit-scrollbar {
+    width: 6px;
+}
+
+div[data-baseweb="menu"] ul::-webkit-scrollbar-track {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+div[data-baseweb="menu"] ul::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+div[data-baseweb="menu"] ul::-webkit-scrollbar-thumb:hover {
+    background: #007AFF;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -1431,6 +1530,7 @@ tickers_list = [
     "BTC-USD","ETH-USD"
 ]
 
+# Enhanced dropdown controls with better styling
 controls = st.columns([2,2,2,2,1])
 with controls[0]:
     ticker = st.selectbox(tr("ticker_label", st.session_state.user_lang), tickers_list, index=0)
