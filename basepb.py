@@ -1079,7 +1079,7 @@ if HAS_ARIMA:
         
         model = ARIMA(series, order=order).fit()
         fc = model.forecast(steps=periods)
-        dates = pd.date_range(start=series.index[-1] + timedelta(days=1), periods=periods)  # FIXED LINE
+        dates = pd.date_range(start=series.index[-1] + timedelta(days=1), periods=periods) # FIXED LINE
         forecasts['ARIMA'] = pd.DataFrame({'Date': dates, 'yhat': fc.values})
 
     except Exception as e:
@@ -1639,5 +1639,6 @@ else:
 if __name__ == "__main__":
     # This allows the app to run on Render
     pass
+
 
 
